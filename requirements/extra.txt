@@ -1,0 +1,4 @@
+channels==3.0.4
+channels_redis==3.4.0
+Pillow==9.5.0
+channels[daphne]

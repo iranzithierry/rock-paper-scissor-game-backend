@@ -1,0 +1,83 @@
+version: '3'
+services:
+  db:
+    image: postgres:14.2
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/data/postgres
+
+  web:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: dev.txt
+    restart: always
+    ports:
+      - 8000:8000
+    env_file: .env
+    # command: 'sh -c "./manage.py runserver 0.0.0.0:8000"'
+    # command: 'sh -c "./manage.py migrate --noinput && ./manage.py collectstatic --noinput && ./manage.py runserver 0.0.0.0:8000"'
+    command: sh /entrypoint-web.sh
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+
+  daphne:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: dev.txt
+    restart: unless-stopped
+    # expose:
+    #   - 8008
+    ports:
+      - 8008:8008
+    env_file: .env
+    command: sh -c "daphne -b 0.0.0.0 -p 8008 src.asgi:application"
+    depends_on:
+      - web
+    volumes:
+      - ./:/app
+  # queue:
+  #   build:
+  #     context: .
+  #     args:
+  #       REQUIREMENTS_FILE: dev.txt
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   command: sh /entrypoint-queue.sh
+  #   volumes:
+  #     - ./:/app
+
+  # beat:
+  #   build:
+  #     context: .
+  #     args:
+  #       REQUIREMENTS_FILE: dev.txt
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   command: sh /entrypoint-beat.sh
+  #   volumes:
+  #     - ./:/app
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   restart: always
+  #   ports:
+  #     - 1025:1025
+  #     - 8025:8025
+
+volumes:
+  db-data:
