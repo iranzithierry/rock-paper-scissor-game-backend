@@ -1,11 +1,39 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 
-from src.users.models import User
 from rest_framework import exceptions
 from rest_framework_simplejwt.state import token_backend
-from src.common.serializers import ThumbnailerJSONSerializer
+from django.conf import settings
+from rest_framework.serializers import ImageField as ApiImageField
+from easy_thumbnails.files import get_thumbnailer
+from .models import build_absolute_uri
 
+THUMBNAIL_ALIASES = getattr(settings, 'THUMBNAIL_ALIASES', {})
+
+
+def get_url(instance, alias_obj, alias=None):
+    if alias is not None:
+        return build_absolute_uri(get_thumbnailer(instance).get_thumbnail(alias_obj[alias]).url)
+    elif alias is None:
+        return build_absolute_uri(instance.url)
+    else:
+        raise TypeError('Unsupported field type')
+
+
+def image_sizes(instance, alias_obj):
+    i_sizes = list(alias_obj.keys())
+    return {'original': get_url(instance, alias_obj), **{k: get_url(instance, alias_obj, k) for k in i_sizes}}
+
+
+class ThumbnailerJSONSerializer(ApiImageField):
+    def __init__(self, alias_target, **kwargs):
+        self.alias_target = THUMBNAIL_ALIASES.get(alias_target)
+        super(ThumbnailerJSONSerializer, self).__init__(**kwargs)
+
+    def to_representation(self, instance):
+        if instance:
+            return image_sizes(instance, self.alias_target)
+        return None
 
 class UserSerializer(serializers.ModelSerializer):
     profile_picture = ThumbnailerJSONSerializer(required=False, allow_null=True, alias_target='src.users')
