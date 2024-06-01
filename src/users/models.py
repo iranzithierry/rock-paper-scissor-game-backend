@@ -9,10 +9,13 @@ from django_rest_passwordreset.signals import reset_password_token_created
 from easy_thumbnails.signals import saved_file
 from easy_thumbnails.signal_handlers import generate_aliases_global
 
-from src.common.helpers import build_absolute_uri
 from src.notifications.services import notify, ACTIVITY_USER_RESETS_PASS
+from django.conf import settings
 
 
+def build_absolute_uri(path):
+    return f'{settings.SITE_URL}{path}'
+    
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
     """
