@@ -1,0 +1,91 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:14.2
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  app:
+    container_name: app
+    image: iranzithierry/django:template
+    command: sh "scripts/deploy.sh"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - media_files:/app/public/media:rw
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - media_files:/app/public/media:ro
+    depends_on:
+      - app
+
+  # daphne:
+  #   build:
+  #     context: .
+  #   command: sh "scripts/daphne.sh"
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - app
+  #   ports:
+  #     - "8008:8008"
+
+  # queue:
+  #   build:
+  #     context: .
+  #   env_file: .env
+  #   command: sh "scripts/celery-queue.sh"
+  #   depends_on:
+  #     - app
+
+  # beat:
+  #   build:
+  #     context: .
+  #   env_file: .env
+  #   command: sh "scripts/celery-beat.sh"
+  #   depends_on:
+  #     - app
+
+  # redis:
+  #   image: redis:alpine
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - app
+  #   ports:
+  #     - "6379:6379"
+
+  # mailpit:
+  #   image: axllent/mailpit:latest
+  #   ports:
+  #     - "1025:1025" # SMTP server
+  #     - "8025:8025" # Web interface
+  #   environment:
+  #     - MAILPIT_RELAY_HOST=localhost
+  #     - MAILPIT_RELAY_PORT=25
+  #   depends_on:
+  #     - app
+
+volumes:
+  db_data:
+  media_files:
+    
+networks:
+  default:
+    

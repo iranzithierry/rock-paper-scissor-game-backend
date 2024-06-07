@@ -1,31 +1,31 @@
-FROM python:3.8
-
-ARG REQUIREMENTS_FILE
+FROM python:3.11.6
 
 WORKDIR /app
-EXPOSE 80
+
 ENV PYTHONUNBUFFERED 1
 
-RUN set -x && \
-	apt-get update && \
-	apt -f install	&& \
-	apt-get -qy install netcat-traditional daphne && \
-	rm -rf /var/lib/apt/lists/* && \
-	wget -O /wait-for https://raw.githubusercontent.com/eficode/wait-for/master/wait-for && \
-	chmod +x /wait-for
+# RUN set -x && \
+# 	apt-get update && \
+# 	apt -f install	&& \
+# 	apt-get -qy install daphne gunicorn
 
-CMD ["sh", "/entrypoint-web.sh"]
-COPY ./docker/ /
+COPY ./scripts/ ./scripts
 
-COPY ./requirements/ ./requirements
-RUN pip install -r ./requirements/${REQUIREMENTS_FILE}
+COPY ./requirements/base.txt /app/base.txt
+COPY ./requirements/production.txt /app/production.txt
 
-COPY . ./
+RUN pip install -r /app/production.txt
 
-# docker run -it --rm 49710d6efee8 /bin/bash
-# docker-compose run --rm web ./manage.py migrate // run inside image
-# docker-compose run --rm web ./manage.py collectstatic --noinput 
-# sudo docker ps // see all runing containers
-# sudo docker down
-# sudo docker-compose restart // restart all containes
-# sudo docker exec -it e92fd59ecef4 mysql -u root -p // running in container
+
+COPY . /app/
+
+
+# sudo docker build -t django/app:backend .
+# sudo docker push django/app:backend
+
+
+# CHEATSHEET
+# EXECUTE INSIDE IN CONTAINER
+# > docker exec -t -i [ID] /bin/bash
+# > docker exec -it [ID] mysql -u root -p 
+# > docker exec -it [ID] psql -U {DB_USER} -d Django
