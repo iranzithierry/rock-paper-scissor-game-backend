@@ -257,10 +257,14 @@ SPECTACULAR_SETTINGS = {
 
 # SECURITY
 # ----------------------------------------------------------------------------
+APP_JWT_SIGNING_KEY=env.str("APP_JWT_SIGNING_KEY")
+
+# SIMPLE JWT
+# ----------------------------------------------------------------------------
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=5),
-    "SIGNING_KEY": env.str("APP_JWT_SIGNING_KEY"),
+    "SIGNING_KEY": APP_JWT_SIGNING_KEY,
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': False,
